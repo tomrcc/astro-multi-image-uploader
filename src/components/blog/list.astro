@@ -1,0 +1,8 @@
+---
+import PostSummary from "./summary.astro";
+const { posts } = Astro.props;
+---
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-8">
+  {posts.map((post, i) => <PostSummary {...post} key={i} loading="eager" />)}
+</div>

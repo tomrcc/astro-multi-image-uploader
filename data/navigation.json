@@ -1,0 +1,41 @@
+{
+  "header": {
+    "logo": "/images/logos/logo-wordmark-blue.png",
+    "logo_alt_text": "CloudCannon logo",
+    "logo_url": "/",
+    "links": [
+      {
+        "link": "/about/",
+        "text": "About"
+      },
+      {
+        "link": "/blog/",
+        "text": "Blog"
+      },
+      {
+        "link": "https://github.com/CloudCannon/astro-starter/",
+        "text": "GitHub"
+      },
+      {
+        "link": "https://cloudcannon.com/",
+        "text": "CloudCannon"
+      }
+    ]
+  },
+  "footer": {
+    "logo": "/images/logos/logo-wordmark-white.png",
+    "logo_alt_text": "CloudCannon logo",
+    "logo_url": "/",
+    "copyright": "MyCompany. All rights reserved.",
+    "links": [
+      {
+        "link": "/blog/",
+        "text": "Blog"
+      },
+      {
+        "link": "/feed.xml",
+        "text": "RSS Feed"
+      }
+    ]
+  }
+}

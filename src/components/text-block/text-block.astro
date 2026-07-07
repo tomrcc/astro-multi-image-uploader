@@ -1,0 +1,27 @@
+---
+import Markdown from "../utility/markdown.astro";
+
+interface Props {
+  heading?: string;
+  text_content: string;
+}
+
+const { heading, text_content } = Astro.props;
+---
+
+<section class="py-12 md:py-20">
+  <div class="mx-auto max-w-3xl px-8">
+    {heading && (
+      <h2
+        data-editable="text"
+        data-prop="heading"
+        class="text-2xl md:text-3xl font-bold mb-6 text-balance"
+      >
+        {heading}
+      </h2>
+    )}
+    <div class="text-gray-600">
+      <Markdown content={text_content} dataProp="text_content" dataType="block" />
+    </div>
+  </div>
+</section>

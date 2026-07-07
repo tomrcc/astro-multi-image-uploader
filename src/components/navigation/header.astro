@@ -1,0 +1,78 @@
+---
+import { header } from "../../../data/navigation.json";
+---
+
+<header class="bg-white">
+  <div class="mx-auto max-w-6xl px-8">
+    <nav class="flex items-center justify-between py-4">
+      <a href={header.logo_url}>
+        <img class="w-48" src={header.logo} alt={header.logo_alt_text} />
+      </a>
+
+      <ul class="hidden sm:flex items-center gap-6">
+        {header.links.map((link) => (
+          <li>
+            <a class="text-gray-700 hover:text-gray-500 transition-colors" href={link.link}>
+              {link.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        class="sm:hidden p-2"
+        aria-label="Open navigation menu"
+        popovertarget="mobile-menu"
+        popovertargetaction="show"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <div popover id="mobile-menu" class="fixed inset-0 m-0 w-full h-full max-w-none max-h-none border-none bg-white z-50">
+        <div class="flex flex-col h-full">
+        <div class="mx-auto w-full max-w-6xl flex items-center justify-between px-8 py-4">
+          <a href={header.logo_url}>
+            <img class="w-48" src={header.logo} alt={header.logo_alt_text} />
+          </a>
+          <button
+            class="p-2"
+            aria-label="Close navigation menu"
+            popovertarget="mobile-menu"
+            popovertargetaction="hide"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <ul class="flex flex-1 flex-col items-center justify-center gap-0 divide-y divide-gray-200">
+          {header.links.map((link) => (
+            <li class="w-full max-w-xs text-center">
+              <a class="block py-5 text-2xl font-medium text-gray-800 hover:text-blue-600 transition-colors" href={link.link}>
+                {link.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<style>
+  #mobile-menu {
+    opacity: 0;
+    transition: opacity 200ms ease, display 200ms allow-discrete, overlay 200ms allow-discrete;
+  }
+  #mobile-menu:popover-open {
+    opacity: 1;
+  }
+  @starting-style {
+    #mobile-menu:popover-open {
+      opacity: 0;
+    }
+  }
+</style>

@@ -1,0 +1,29 @@
+{
+  "name": "astro-editable-regions-starter",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.0",
+    "@astrojs/react": "^5.0.0",
+    "@astrojs/rss": "^4.0.17",
+    "@cloudcannon/editable-regions": "^0.0.12",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/markdown-it": "^14.0.1",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "astro": "^6.0.2",
+    "astro-seo": "^0.8.0",
+    "markdown-it": "^13.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^4.0.0"
+  }
+}

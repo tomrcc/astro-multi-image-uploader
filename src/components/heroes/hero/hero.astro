@@ -1,0 +1,72 @@
+---
+import type { ImageMetadata } from "astro";
+import { Picture } from "astro:assets";
+import Markdown from "../../utility/markdown.astro";
+
+interface Props {
+  heading: string;
+  subheading: string;
+  image: {
+    image_path: string;
+    alt_text: string;
+  };
+  button?: {
+    text: string;
+    link: string;
+  };
+}
+
+const { heading, subheading, image, button } = Astro.props;
+
+const allImages = import.meta.glob<{ default: ImageMetadata }>(
+  "/src/assets/**/*.{jpeg,jpg,png,gif,svg,webp,avif}",
+  { eager: true },
+);
+const imageSrc = allImages[image.image_path]?.default ?? image.image_path;
+---
+
+<section class="py-16 md:py-24">
+  <div
+    class="mx-auto max-w-6xl px-8 flex flex-col md:flex-row items-center gap-8">
+    <div class="flex-1 flex flex-col gap-4">
+      <h1
+        data-editable="text"
+        data-prop="heading"
+        class="text-3xl md:text-5xl font-bold leading-tight text-balance">
+        {heading}
+      </h1>
+      <div class="text-lg text-gray-600 max-w-prose">
+        <Markdown content={subheading} dataProp="subheading" dataType="block" />
+      </div>
+      {
+        button?.link && (
+          <a
+            href={button.link}
+            class="mt-2 inline-block w-fit rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 transition-colors">
+            <span data-editable="text" data-prop="button.text">
+              {button.text}
+            </span>
+          </a>
+        )
+      }
+    </div>
+    {
+      image.image_path && image.alt_text && (
+        <div class="flex-1">
+          <Picture
+            data-editable="image"
+            data-prop-src="image.image_path"
+            data-prop-alt="image.alt_text"
+            alt={image.alt_text}
+            src={imageSrc}
+            class="w-full max-w-lg"
+            loading="eager"
+            widths={[600, 800, 1200]}
+            sizes="(max-width: 1200px) 100vw, 600px"
+            formats={["avif", "webp"]}
+          />
+        </div>
+      )
+    }
+  </div>
+</section>
