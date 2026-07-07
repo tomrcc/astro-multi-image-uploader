@@ -77,10 +77,32 @@ const canonicalURL = new URL(seo?.canonical_url ?? Astro.url.pathname, baseUrl);
     </main>
     <Footer />
     <script>
+      // Editor-only bundles: component re-rendering + the custom multi-image
+      // uploader. Loaded separately so a failure in one can't take out the
+      // other, and both are logged so we can see exactly what happened.
+      const loadEditorScripts = (trigger: string) => {
+        console.log(
+          `[MIU] loading editor scripts (trigger: ${trigger}) — inEditorMode=${window.inEditorMode}, CloudCannonAPI=${!!window.CloudCannonAPI}`,
+        );
+        import("../scripts/register-components.ts")
+          .then(() => console.log("[MIU] register-components loaded"))
+          .catch((e) => console.error("[MIU] register-components FAILED:", e));
+        import("../scripts/multi-image-uploader.ts")
+          .then(() => console.log("[MIU] multi-image-uploader module loaded"))
+          .catch((e) => console.error("[MIU] multi-image-uploader FAILED:", e));
+      };
+
       if (window.inEditorMode) {
-        import("../scripts/register-components.ts").catch((error) => {
-          console.warn("Failed to load CloudCannon component registration:", error);
-        });
+        loadEditorScripts("inEditorMode at parse");
+      } else {
+        console.log(
+          "[MIU] inEditorMode falsy at parse — waiting for cloudcannon:load as fallback",
+        );
+        document.addEventListener(
+          "cloudcannon:load",
+          () => loadEditorScripts("cloudcannon:load"),
+          { once: true },
+        );
       }
     </script>
   </body>

@@ -1,6 +1,5 @@
 import { registerAstroComponent } from "@cloudcannon/editable-regions/astro";
 import "@cloudcannon/editable-regions/astro-react-renderer";
-import "./multi-image-uploader";
 import Hero from "../components/heroes/hero/hero.astro";
 import LeftRight from "../components/left-right/left-right.astro";
 import TextBlock from "../components/text-block/text-block.astro";
@@ -12,3 +11,5 @@ registerAstroComponent("LeftRight", LeftRight);
 registerAstroComponent("TextBlock", TextBlock);
 registerAstroComponent("PostHero", PostHero);
 registerAstroComponent("Gallery", Gallery);
+
+console.log("[MIU] register-components: registered Hero, LeftRight, TextBlock, PostHero, Gallery");

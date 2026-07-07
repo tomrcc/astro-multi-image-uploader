@@ -54,10 +54,14 @@ const resolve = (path: string) => allImages[path]?.default?.src ?? path;
 </section>
 
 <style is:global>
+  /* The element is only ever registered (`customElements.define`) inside the
+     Visual Editor, so `:defined` is true there and false in production —
+     no dependency on a body class that may or may not be present. */
   multi-image-uploader {
     display: none;
   }
-  body.cms-editor-active multi-image-uploader {
+  multi-image-uploader:defined {
     display: block;
+    margin-top: 0.5rem;
   }
 </style>
