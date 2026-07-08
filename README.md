@@ -73,6 +73,52 @@ Key gotchas worth knowing (all documented inline in the source):
 Set `localStorage.miu-debug = "1"` and reload to see verbose `[MIU]` tracing in
 the console; errors always log.
 
+## Add this to your own site
+
+This works in any Astro site using CloudCannon **Editable Regions**. Steps:
+
+1. **Copy the uploader** `src/scripts/multi-image-uploader.ts` into your project.
+
+2. **Load it editor-only.** Import it from the same editor-only entrypoint that
+   registers your components (see `src/scripts/register-components.ts`, loaded by
+   `src/layouts/Layout.astro` when `window.inEditorMode` is set). Loading it only
+   in the editor means the `<multi-image-uploader>` element is never defined in
+   production, so the pill never ships.
+
+3. **Add the pill to your gallery component.** In the component's `.astro`
+   template:
+   - place `<multi-image-uploader></multi-image-uploader>` as a **sibling of the
+     `data-editable="array"` element** (not inside it — the array re-render would
+     strip it),
+   - wrap them in a `position: relative` container so the pill anchors to the
+     corner,
+   - add the `multi-image-uploader { display:none }` / `:defined { … }` CSS so the
+     pill is editor-only and floats in the corner (see `gallery.astro`).
+
+4. **Match your editable markup and field names.** The uploader expects the array
+   to be marked up as `data-editable="array" data-prop="images"` with items as
+   `data-editable="array-item"`. If your array prop or item fields differ, adjust:
+   - the `[data-prop="images"]` selector in `upload()`,
+   - the item shape `{ image_path, alt_text }` in `uploadAll()`,
+   - the `getInputConfig` slug field.
+
+5. **Test in the Visual Editor, with debug logging on.** The uploader is silent
+   by default, so turn on its tracing while you check the wiring:
+   - Open the browser dev tools **on the site preview** (right-click inside the
+     preview area → *Inspect*).
+   - In that console, run `localStorage.miu-debug = "1"` and reload the editor.
+   - Add a few images with the pill. You should now see `[MIU] …` log lines as it
+     uploads and appends, and — the actual success check — the gallery's array
+     gains the new items **and** the grid updates on the page without a reload.
+
+   The flag is only a diagnostic; the uploader works the same without it. Turn it
+   off again with `localStorage.removeItem("miu-debug")`.
+
+> **Not on Editable Regions?** If your site uses **Bookshop** (e.g. Jekyll), the
+> data-writing mechanism is different — see the `jekyll-multi-image-uploader`
+> sibling repo, which writes via `window.CloudCannon.set` rather than dispatching
+> the `cloudcannon-api` event.
+
 ---
 
 ## Getting started
