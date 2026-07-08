@@ -85,7 +85,33 @@ function resolveSlug(imagesArray: Element): string | null {
   return `${prop}.${index}.images`;
 }
 
+// Append one item to an editable array the SAME way the editor's built-in
+// "Add Item" button does (editable-array.ts → mount): dispatch a bubbling
+// `cloudcannon-api` event on the array element. Each [data-editable] ancestor
+// prepends its own data-prop to build the real `source` path, the root node
+// executes the write, AND its data-change listener re-renders the grid. This
+// is why the raw `currentFile().data.addArrayItem(slug, …)` call never showed
+// anything: it bypassed the node graph that drives the live re-render.
+function dispatchAddArrayItem(
+  imagesArray: Element,
+  index: number,
+  value: unknown,
+): void {
+  imagesArray.dispatchEvent(
+    new CustomEvent("cloudcannon-api", {
+      bubbles: true,
+      detail: {
+        source: imagesArray.getAttribute("data-prop") ?? "images",
+        action: "add-array-item",
+        newIndex: index,
+        value,
+      },
+    }),
+  );
+}
+
 async function uploadAll(
+  imagesArray: Element,
   slug: string,
   fileList: FileList,
   onStatus: (text: string) => void,
@@ -113,15 +139,19 @@ async function uploadAll(
   for (const f of files) {
     try {
       const url = await api.uploadFile(f, inputConfig);
-      // The new item's data goes under `value` (NOT `item`) — this matches the
-      // editor's own built-in "add" button (editable.ts → add-array-item). With
-      // the wrong key the API appends a *blank* row: the file uploads but no
-      // image_path lands in the array, so nothing shows in the grid.
-      await file.data.addArrayItem({
+      // Append at the current end of the array (count live DOM items).
+      const endIndex = imagesArray.querySelectorAll(
+        ':scope > [data-editable="array-item"]',
+      ).length;
+      const value = { image_path: url, alt_text: "" };
+      console.log("[MIU] uploaded → dispatching add-array-item", {
+        file: f.name,
+        url,
+        prop: imagesArray.getAttribute("data-prop"),
+        newIndex: endIndex,
         slug,
-        value: { image_path: url, alt_text: "" },
       });
-      log(`added ${url} to ${slug}`);
+      dispatchAddArrayItem(imagesArray, endIndex, value);
       done++;
     } catch (err) {
       console.error("[MIU] upload/append failed:", f.name, err);
@@ -222,8 +252,13 @@ class MultiImageUploader extends HTMLElement {
       return;
     }
     const slug = resolveSlug(imagesArray);
+    console.log("[MIU] upload starting", {
+      files: Array.from(files).map((f) => f.name),
+      resolvedSlug: slug,
+      arrayProp: imagesArray.getAttribute("data-prop"),
+    });
     if (!slug) return;
-    uploadAll(slug, files, (t) => {
+    uploadAll(imagesArray, slug, files, (t) => {
       if (!this.statusEl) return;
       this.statusEl.textContent = t;
       this.statusEl.hidden = false;
