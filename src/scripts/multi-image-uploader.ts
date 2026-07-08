@@ -14,7 +14,11 @@
 
 type CloudCannonFile = {
   data: {
-    addArrayItem(opts: { slug: string; item?: unknown }): Promise<unknown>;
+    addArrayItem(opts: {
+      slug: string;
+      value?: unknown;
+      index?: number;
+    }): Promise<unknown>;
   };
   // May be sync or async depending on API version — always `await` it.
   getInputConfig?(opts: { slug: string }): unknown | Promise<unknown>;
@@ -109,9 +113,13 @@ async function uploadAll(
   for (const f of files) {
     try {
       const url = await api.uploadFile(f, inputConfig);
+      // The new item's data goes under `value` (NOT `item`) — this matches the
+      // editor's own built-in "add" button (editable.ts → add-array-item). With
+      // the wrong key the API appends a *blank* row: the file uploads but no
+      // image_path lands in the array, so nothing shows in the grid.
       await file.data.addArrayItem({
         slug,
-        item: { image_path: url, alt_text: "" },
+        value: { image_path: url, alt_text: "" },
       });
       log(`added ${url} to ${slug}`);
       done++;
@@ -146,26 +154,35 @@ class MultiImageUploader extends HTMLElement {
     root.innerHTML = `
       <style>
         .miu-zone {
-          display: flex; flex-direction: column; align-items: center;
-          justify-content: center; gap: 0.25rem; padding: 1rem;
-          height: 100%; min-height: 12rem;
-          border: 2px dashed #c7cdd6; border-radius: 0.5rem;
-          background: #f8fafc; color: #475569;
-          font: 500 0.95rem/1.4 system-ui, sans-serif; text-align: center;
-          cursor: pointer; transition: border-color 0.15s, background 0.15s;
+          display: inline-flex; align-items: center; gap: 0.4rem;
+          padding: 0.5rem 0.85rem; border-radius: 999px;
+          border: 1px solid #c7cdd6; background: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15); color: #1e293b;
+          font: 600 0.85rem/1 system-ui, sans-serif; white-space: nowrap;
+          cursor: pointer; backdrop-filter: blur(4px);
+          transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
         }
-        .miu-zone[data-drag="true"] { border-color: #2563eb; background: #eff6ff; }
-        .miu-zone strong { color: #1e293b; }
-        .miu-hint { font-size: 0.8rem; color: #64748b; }
-        .miu-status { font-size: 0.8rem; color: #2563eb; min-height: 1.1em; }
-        .miu-zone input { display: none; }
+        .miu-zone:hover { box-shadow: 0 3px 12px rgba(15, 23, 42, 0.22); }
+        /* Whole tile highlights while dragging files anywhere over the gallery. */
+        .miu-zone[data-drag="true"] {
+          border-color: #2563eb; background: #eff6ff; color: #1d4ed8;
+        }
+        .miu-icon { font-size: 1.05rem; line-height: 1; }
+        .miu-status {
+          margin-top: 0.35rem; padding: 0.2rem 0.55rem; border-radius: 0.4rem;
+          background: rgba(255, 255, 255, 0.95); box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+          font: 500 0.78rem/1.3 system-ui, sans-serif; color: #2563eb;
+          text-align: right;
+        }
+        .miu-status[hidden] { display: none; }
+        input { display: none; }
       </style>
-      <label class="miu-zone">
-        <span>⬆ <strong>Drop images here</strong> or click to select</span>
-        <span class="miu-hint">Upload multiple at once</span>
-        <span class="miu-status"></span>
+      <label class="miu-zone" title="Upload multiple images at once">
+        <span class="miu-icon">＋</span>
+        <span>Add images</span>
         <input type="file" accept="image/*" multiple />
       </label>
+      <div class="miu-status" hidden></div>
     `;
 
     const zone = root.querySelector<HTMLElement>(".miu-zone")!;
@@ -207,7 +224,16 @@ class MultiImageUploader extends HTMLElement {
     const slug = resolveSlug(imagesArray);
     if (!slug) return;
     uploadAll(slug, files, (t) => {
-      if (this.statusEl) this.statusEl.textContent = t;
+      if (!this.statusEl) return;
+      this.statusEl.textContent = t;
+      this.statusEl.hidden = false;
+      // Auto-dismiss the floating pill's status once a batch finishes.
+      if (/\.$/.test(t)) {
+        const el = this.statusEl;
+        setTimeout(() => {
+          if (el.textContent === t) el.hidden = true;
+        }, 4000);
+      }
     });
   }
 }
