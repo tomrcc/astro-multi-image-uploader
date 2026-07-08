@@ -1,81 +1,125 @@
-# Astro Minimal Starter
+# CloudCannon Multi-Image Uploader Demo
 
-A minimal starter template for building an Astro site with [CloudCannon](https://cloudcannon.com/) using **Editable Regions** for visual editing.
+A small Astro + [CloudCannon](https://cloudcannon.com/) site that demonstrates a
+**custom multi-image uploader** for the Visual Editor.
 
-See a [demo site](https://tiny-jackal.cloudvent.net/).
+CloudCannon's stock image input adds **one file at a time**. This repo shows how
+to build a drop-in web component that lets an editor **select or drag many images
+at once** — every file is uploaded to the site's media *and* added to a Gallery's
+image grid live, without leaving the page.
 
-## Features
+> **The demo:** open the home page in the Visual Editor. The **Gallery** block has
+> a floating **"＋ Add images"** pill in its top-right corner. Select or drop
+> several images and watch them upload and fill the grid in one go.
 
-- Visual editing with [Editable Regions](https://cloudcannon.com/documentation/developer-guides/set-up-visual-editing/an-overview-of-editable-regions/) (text, image, array, source, and component regions)
-- Page building with reusable components
-- Blog with pagination and tags
-- [Tailwind CSS v4](https://tailwindcss.com/) with CSS-first configuration
-- SEO controls
-- Pagefind search
+---
 
-## Getting Started
+## What this demonstrates
 
-Click `Use this template` to make your own copy of the repository.
+Three techniques that are reusable in any CloudCannon + Editable Regions project:
 
-### Local Development
+1. **Multi-file upload via the Visual Editor JS API.** `window.CloudCannonAPI`
+   exposes `uploadFile()`, which we call once per selected file to push the bytes
+   into the site's media and get back a URL.
 
-1. Clone the repository to your local machine.
+2. **Live grid updates by re-using the editor's own event.** The array grid only
+   re-renders if you mutate it the way CloudCannon does internally. Instead of
+   calling the raw `addArrayItem` API (which writes the data but never repaints),
+   we dispatch the **same bubbling `cloudcannon-api` event** the built-in
+   "Add Item" button fires. Each `[data-editable]` ancestor builds the real data
+   path, and the array node re-renders — so new images appear instantly.
 
-2. Start the development server.
+3. **Shadow-DOM UI that survives re-renders.** CloudCannon re-renders components
+   by morphing the light DOM against server HTML. A dropzone rendered into the
+   light DOM gets stripped on the next re-render (leaving an invisible,
+   sized-but-blank element). Rendering into a **shadow root** keeps the UI
+   invisible to that morph, so it persists.
+
+## How it works
+
+| File | Role |
+| --- | --- |
+| `src/scripts/multi-image-uploader.ts` | The `<multi-image-uploader>` web component: the floating pill UI, upload loop, and the `cloudcannon-api` event dispatch. Heavily commented. |
+| `src/components/gallery/gallery.astro` | The Gallery block. Renders the `images` array as a grid and places `<multi-image-uploader>` as a floating, editor-only sibling of the array. |
+| `src/scripts/register-components.ts` | Registers `Gallery` for live re-rendering and imports the uploader — **loaded only inside the editor**. |
+| `src/layouts/Layout.astro` | Loads the editor-only scripts when `window.inEditorMode` is set (with a `cloudcannon:load` fallback). |
+| `cloudcannon.config.yml` | Defines the `Gallery` content block and its `gallery_images` structure (`image_path` + `alt_text`). |
+
+The flow when an editor selects files:
+
+```
+select/drop files
+      │
+      ▼
+uploadAll()  ──►  api.uploadFile(file)               // 1. upload bytes → URL
+      │
+      ▼
+dispatchAddArrayItem(imagesArray, index, {image_path, alt_text})
+      │                                              // 2. bubbling cloudcannon-api event
+      ▼
+CloudCannon builds the data path, writes the item, and re-renders the grid live
+```
+
+Key gotchas worth knowing (all documented inline in the source):
+
+- `file.getInputConfig({slug})` may return a **Promise** — you must `await` it
+  before `uploadFile()`, or the args fail to structured-clone across the
+  `postMessage` boundary (`DataCloneError`) and the upload silently never runs.
+- The new item's data goes under `value` (not `item`) in the event detail —
+  matching the editor's built-in add button.
+- The uploader is gated on `multi-image-uploader:defined` so it only shows inside
+  the editor (the element is only ever registered there) and never in production.
+
+Set `localStorage.miu-debug = "1"` and reload to see verbose `[MIU]` tracing in
+the console; errors always log.
+
+---
+
+## Getting started
+
+### Local development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## CloudCannon Setup
+The uploader only activates inside CloudCannon's Visual Editor (it needs the
+`window.CloudCannonAPI`), so to exercise it end-to-end you'll connect the repo to
+CloudCannon (below) and open the home page in the visual editor.
 
-This site is pre-configured for CloudCannon. Connect your repository and CloudCannon will detect the configuration in `.cloudcannon/initial-site-settings.json` and build your site automatically. The editing experience is defined in `cloudcannon.config.yml`, which you can modify to control your editors' experience.
+### CloudCannon setup
 
-### Editable Regions
+Connect your repository and CloudCannon will detect the configuration in
+`.cloudcannon/initial-site-settings.json` and build the site automatically. The
+editing experience is defined in `cloudcannon.config.yml`. Editor-facing usage
+notes live in `.cloudcannon/README.md` (shown inside the CloudCannon app).
 
-This starter demonstrates several types of Editable Region:
+## About the base starter
 
-- **Text** (`data-editable="text"`) for editing front matter text values inline
-- **Image** (`data-editable="image"`) for editing front matter image values
-- **Array** (`data-editable="array"`) for page-building with reorderable content blocks
-- **Source** (`data-editable="source"`) for making standalone `.astro` pages editable
-- **Component** (`<editable-component>`) for live re-rendering of Astro components
+This project is built on CloudCannon's Astro Editable Regions starter, which also
+demonstrates:
 
-Components that need live re-rendering are registered in `src/scripts/register-components.ts` and loaded conditionally when the site is open in CloudCannon's Visual Editor.
+- Visual editing with [Editable Regions](https://cloudcannon.com/documentation/developer-guides/set-up-visual-editing/an-overview-of-editable-regions/) — text, image, array, source, and component regions
+- Page building with reusable components (Hero, LeftRight, TextBlock, Gallery)
+- A blog with pagination and tags
+- [Tailwind CSS v4](https://tailwindcss.com/), SEO controls, and Pagefind search
 
-#### Source Editables
+Components that need live re-rendering are registered in
+`src/scripts/register-components.ts` and loaded only inside the Visual Editor.
 
-The About page (`src/content/pages/about.astro`) demonstrates **source editables** — a pattern where content lives directly in an Astro template rather than in Markdown front matter. Source editable regions use `data-editable="source"`, `data-path="path/to/file.astro"`, and `data-key` attributes. CloudCannon writes changes straight back to the `.astro` file.
-
-This is useful for standalone pages (like About or Contact) where a developer wants full control over the markup while still giving editors visual editing access — **and where page building with components is *not* desired**. No accompanying Markdown file or front matter schema is needed. A thin routing wrapper in `src/pages/about.astro` handles Astro's file-based routing.
-
-### Components
-
-Three page-building components are included:
-
-- **Hero** — heading, subheading, image, and optional button
-- **LeftRight** — side-by-side text and image, with optional flip and button
-- **TextBlock** — heading and rich text content
-
-### Content
-
-- **Pages** are in `src/content/pages/` as Markdown with structured front matter, and support a component-based page-building workflow. Developers can also add standalone pages paired with a routing file in `src/pages/` (like `src/content/pages/about.astro`), and decide which parts of those pages are editable in CloudCannon.
-- **Blog posts** are in `src/content/blog/` as MDX files
-- **Data** files (site settings, navigation) are in `data/`
-
-## Project Structure
+## Project structure
 
 ```
-├── .cloudcannon/          # CloudCannon schemas and postbuild
-├── cloudcannon.config.yml # CloudCannon configuration
+├── .cloudcannon/          # CloudCannon schemas, postbuild, and editor README
+├── cloudcannon.config.yml # CloudCannon configuration (Gallery block lives here)
 ├── data/                  # Site-wide data files
 ├── public/                # Static assets
 └── src/
-    ├── components/        # Astro components
-    ├── content/           # Content collections (pages, blog)
-    ├── layouts/           # Page layouts
-    ├── pages/             # Astro page routes
-    ├── scripts/           # Component registration for visual editing
-    └── styles/            # Global CSS (Tailwind v4)
+    ├── components/         # Astro components (gallery/ has the uploader host)
+    ├── content/            # Content collections (pages, blog)
+    ├── layouts/            # Page layouts (Layout.astro loads editor scripts)
+    ├── pages/              # Astro page routes
+    ├── scripts/            # multi-image-uploader.ts + register-components.ts
+    └── styles/             # Global CSS (Tailwind v4)
 ```

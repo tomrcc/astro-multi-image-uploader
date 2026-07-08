@@ -1,16 +1,23 @@
 // Custom multi-image uploader for the CloudCannon Visual Editor.
 //
-// CloudCannon's stock image input adds one file at a time. The <multi-image-uploader>
-// element renders an on-canvas dropzone inside each Gallery block that uploads
-// *many* files in a single action and appends each to that block's `images`
-// array, driving the Visual Editor JavaScript API directly:
+// CloudCannon's stock image input adds one file at a time. The
+// <multi-image-uploader> element renders a floating "＋ Add images" pill in the
+// corner of each Gallery block. Selecting/dropping several files uploads them
+// all in one action and appends each to that block's `images` array, so the
+// grid fills in live.
 //
-//   const api = window.CloudCannonAPI.useVersion("v1", true)
-//   const url = await api.uploadFile(file, await file.getInputConfig({ slug }))
-//   await api.currentFile().data.addArrayItem({ slug, item })
+// Two Visual Editor mechanisms are combined:
+//   1. Upload the bytes via the JS API:
+//        const api = window.CloudCannonAPI.useVersion("v1", true)
+//        const url = await api.uploadFile(file, await file.getInputConfig({ slug }))
+//   2. Append the array item by dispatching the SAME bubbling `cloudcannon-api`
+//      event the editor's own "Add Item" button uses (see dispatchAddArrayItem).
+//      This is what makes the grid re-render live — calling the raw
+//      `addArrayItem` API directly writes the data but never repaints.
 //
-// Loaded only inside the editor (see Layout.astro). Set `localStorage.miu-debug
-// = "1"` and reload to see verbose `[MIU]` tracing; errors always log.
+// Loaded only inside the editor (see register-components.ts / Layout.astro). Set
+// `localStorage.miu-debug = "1"` and reload for verbose `[MIU]` tracing; errors
+// always log.
 
 type CloudCannonFile = {
   data: {
@@ -144,12 +151,10 @@ async function uploadAll(
         ':scope > [data-editable="array-item"]',
       ).length;
       const value = { image_path: url, alt_text: "" };
-      console.log("[MIU] uploaded → dispatching add-array-item", {
+      log("uploaded → dispatching add-array-item", {
         file: f.name,
         url,
-        prop: imagesArray.getAttribute("data-prop"),
         newIndex: endIndex,
-        slug,
       });
       dispatchAddArrayItem(imagesArray, endIndex, value);
       done++;
@@ -252,10 +257,9 @@ class MultiImageUploader extends HTMLElement {
       return;
     }
     const slug = resolveSlug(imagesArray);
-    console.log("[MIU] upload starting", {
+    log("upload starting", {
       files: Array.from(files).map((f) => f.name),
       resolvedSlug: slug,
-      arrayProp: imagesArray.getAttribute("data-prop"),
     });
     if (!slug) return;
     uploadAll(imagesArray, slug, files, (t) => {
