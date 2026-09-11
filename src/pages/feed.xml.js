@@ -8,7 +8,7 @@ export async function GET() {
   return rss({
     title: site.site_title,
     description: site.description,
-    site: 'https://tiny-jackal.cloudvent.net',
+    site: 'https://grey-charger.cloudvent.net',
     items: posts.map((post) => ({
       link: `/blog/${post.id}`,
       title: post.data.title,

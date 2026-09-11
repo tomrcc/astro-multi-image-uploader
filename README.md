@@ -3,14 +3,37 @@
 A small Astro + [CloudCannon](https://cloudcannon.com/) site that demonstrates a
 **custom multi-image uploader** for the Visual Editor.
 
+**[▶ Live demo site](https://grey-charger.cloudvent.net/)** &nbsp;·&nbsp;
+[Lift it into your own site](#lift-this-into-your-own-site) &nbsp;·&nbsp;
+Bookshop/Jekyll version: [jekyll-multi-image-uploader](https://github.com/tomrcc/jekyll-multi-image-uploader)
+
 CloudCannon's stock image input adds **one file at a time**. This repo shows how
 to build a drop-in web component that lets an editor **select or drag many images
 at once** — every file is uploaded to the site's media *and* added to a Gallery's
 image grid live, without leaving the page.
 
-> **The demo:** open the home page in the Visual Editor. The **Gallery** block has
-> a floating **"＋ Add images"** pill in its top-right corner. Select or drop
-> several images and watch them upload and fill the grid in one go.
+> **The demo:** [the live site](https://grey-charger.cloudvent.net/) shows the
+> published Gallery — the uploader itself lives in the editor. Open the home page
+> in the **Visual Editor** and the **Gallery** block has a floating
+> **"＋ Add images"** pill in its top-right corner: select or drop several images
+> and watch them upload and fill the grid in one go. The screenshots below are
+> that flow.
+
+## See it in action
+
+The pill sits in the corner of the Gallery block, editor-only. Pick or drag a
+batch of files and it uploads them one after another, showing batch progress:
+
+![Three images uploading at once, the pill reading "Uploading 2/3…"](readme-screenshots/screenshot-uploading.png)
+
+Each upload is appended to the grid as it lands — no reload, no leaving the page:
+
+![The gallery grid grown with the newly uploaded images](readme-screenshots/screenshot-uploaded.png)
+
+The result is one ordinary save: the new image files, plus the page whose gallery
+data now references them.
+
+![CloudCannon's save dialog listing three new images and the edited page](readme-screenshots/screenshot-save-diff.png)
 
 ---
 
@@ -73,11 +96,24 @@ Key gotchas worth knowing (all documented inline in the source):
 Set `localStorage.miu-debug = "1"` and reload to see verbose `[MIU]` tracing in
 the console; errors always log.
 
-## Add this to your own site
+## Lift this into your own site
 
-This works in any Astro site using CloudCannon **Editable Regions**. Steps:
+You don't need this repo. The uploader is **one self-contained file** —
+`src/scripts/multi-image-uploader.ts`, ~280 lines, no imports, no dependencies
+and no build step. Drop it into an existing Astro site that uses CloudCannon
+**Editable Regions** and wire it to a component that has an image array.
+Everything else here is just a host site to demo it in.
 
-1. **Copy the uploader** `src/scripts/multi-image-uploader.ts` into your project.
+> **Want the whole demo instead?** This repo is a GitHub template — press **Use
+> this template** (or fork it) on
+> [the repo](https://github.com/tomrcc/astro-multi-image-uploader), connect your
+> copy to CloudCannon, and open the home page in the Visual Editor.
+
+The lift, step by step:
+
+1. **Copy the one file** — `src/scripts/multi-image-uploader.ts` into your
+   project. It's the only file that moves; every step below is an edit to files
+   you already have.
 
 2. **Load it editor-only.** Import it from the same editor-only entrypoint that
    registers your components (see `src/scripts/register-components.ts`, loaded by
@@ -115,9 +151,10 @@ This works in any Astro site using CloudCannon **Editable Regions**. Steps:
    off again with `localStorage.removeItem("miu-debug")`.
 
 > **Not on Editable Regions?** If your site uses **Bookshop** (e.g. Jekyll), the
-> data-writing mechanism is different — see the `jekyll-multi-image-uploader`
-> sibling repo, which writes via `window.CloudCannon.set` rather than dispatching
-> the `cloudcannon-api` event.
+> data-writing mechanism is different — see the sibling repo
+> [jekyll-multi-image-uploader](https://github.com/tomrcc/jekyll-multi-image-uploader)
+> ([live demo](https://sturdy-wolf.cloudvent.net/)), which writes via
+> `window.CloudCannon.set` rather than dispatching the `cloudcannon-api` event.
 
 ---
 

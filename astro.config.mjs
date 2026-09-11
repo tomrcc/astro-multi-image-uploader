@@ -5,7 +5,7 @@ import mdx from "@astrojs/mdx";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  site: "https://tiny-jackal.cloudvent.net/",
+  site: "https://grey-charger.cloudvent.net/",
   integrations: [react(), editableRegions(), mdx()],
   vite: {
     plugins: [tailwindcss()],
